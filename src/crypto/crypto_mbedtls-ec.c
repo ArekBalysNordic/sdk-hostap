@@ -28,10 +28,13 @@
 #define ECP_PRV_DER_MAX_BYTES 29 + 3 * MBEDTLS_ECP_MAX_BYTES
 
 #ifdef CONFIG_ECC
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 static int f_rng(void *p_rng, unsigned char *buf, size_t len)
 {
 	return random_get_bytes(buf, len);
 }
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
 struct crypto_ec
 {
 	/* To WAR MbedTLS optimization as A is stored 0 but assumed "-3 mod P" internally*/
@@ -635,6 +638,7 @@ int crypto_write_pubkey_der(struct crypto_key *key, unsigned char **key_buf)
 
 struct crypto_key *crypto_ec_get_key(const u8 *privkey, size_t privkey_len)
 {
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int ret = 0;
 	mbedtls_pk_context *kctx = (mbedtls_pk_context *)crypto_alloc_key();
 
@@ -655,6 +659,10 @@ struct crypto_key *crypto_ec_get_key(const u8 *privkey, size_t privkey_len)
 fail:
 	mbedtls_pk_free(kctx);
 	os_free(kctx);
+	return NULL;
+
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
 	return NULL;
 }
 
@@ -778,6 +786,7 @@ void crypto_debug_print_ec_key(const char *title, struct crypto_key *key)
 struct crypto_key *
 crypto_ec_parse_subpub_key(const unsigned char *p, size_t len)
 {
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int ret = 0;
 	mbedtls_pk_context *pkey = (mbedtls_pk_context *)crypto_alloc_key();
 	ret = mbedtls_pk_parse_subpubkey((unsigned char **)&p, p + len, pkey);
@@ -788,6 +797,10 @@ crypto_ec_parse_subpub_key(const unsigned char *p, size_t len)
 	}
 
 	return (struct crypto_key *)pkey;
+
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
+	return NULL;
 }
 
 int crypto_is_ec_key(struct crypto_key *key)
